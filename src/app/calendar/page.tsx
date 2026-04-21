@@ -35,7 +35,7 @@ const calendarStyles = `
 interface Event {
   id: string;
   title: string;
-  date: string; // Stored as ISO string for easier localStorage handling
+  date: string; 
   time: string;
   type: 'study' | 'exam' | 'assignment' | 'meeting';
   description?: string;
@@ -43,7 +43,8 @@ interface Event {
 }
 
 export default function CalendarPage() {
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  // Use null as initial state to prevent hydration mismatch with server time
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [showAddEvent, setShowAddEvent] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [events, setEvents] = useState<Event[]>([]);
@@ -56,14 +57,15 @@ export default function CalendarPage() {
     location: ''
   });
 
-  // Load data from localStorage on mount
+  // Load data and set current date only after mounting on the client
   useEffect(() => {
     const saved = localStorage.getItem('academic-events');
     if (saved) setEvents(JSON.parse(saved));
+    
+    setSelectedDate(new Date()); // Sets the date based on your local system time
     setMounted(true);
   }, []);
 
-  // Save data to localStorage when events change
   useEffect(() => {
     if (mounted) {
       localStorage.setItem('academic-events', JSON.stringify(events));
@@ -90,7 +92,7 @@ export default function CalendarPage() {
   };
 
   const handleAddEvent = () => {
-    if (newEvent.title && newEvent.time) {
+    if (newEvent.title && newEvent.time && selectedDate) {
       const event: Event = {
         id: crypto.randomUUID(),
         title: newEvent.title,
@@ -116,7 +118,7 @@ export default function CalendarPage() {
     );
   };
 
-  if (!mounted) return null;
+  if (!mounted || !selectedDate) return null;
 
   const selectedDateEvents = getEventsForDate(selectedDate);
 
@@ -125,7 +127,6 @@ export default function CalendarPage() {
       <style>{calendarStyles}</style>
       
       <div className="max-w-6xl mx-auto py-10 px-4">
-        {/* Header */}
         <header className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-4">
           <div>
             <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">Study Planner</h1>
@@ -141,7 +142,6 @@ export default function CalendarPage() {
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Calendar Card */}
           <div className="lg:col-span-7">
             <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
               <Calendar
@@ -159,9 +159,7 @@ export default function CalendarPage() {
             </div>
           </div>
 
-          {/* Sidebar: Details & Upcoming */}
           <div className="lg:col-span-5 space-y-6">
-            {/* Selected Date Events */}
             <section className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
               <h2 className="text-lg font-bold mb-4 flex items-center text-slate-800">
                 <CalendarIcon className="mr-2 h-5 w-5 text-blue-500" />
@@ -201,7 +199,6 @@ export default function CalendarPage() {
               </div>
             </section>
 
-            {/* Quick Summary / Upcoming */}
             <section className="bg-slate-900 text-white p-6 rounded-3xl shadow-xl">
               <h2 className="text-lg font-bold mb-4">Focus List</h2>
               <div className="space-y-4">
@@ -224,7 +221,6 @@ export default function CalendarPage() {
           </div>
         </div>
 
-        {/* Modal */}
         {showAddEvent && (
           <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
             <div className="bg-white p-8 rounded-[2rem] shadow-2xl max-w-md w-full relative animate-in fade-in zoom-in duration-200">
