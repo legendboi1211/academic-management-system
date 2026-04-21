@@ -62,8 +62,11 @@ export default function Dashboard() {
 
       const chartData = last30Days.map(dateStr => {
         const dayTotal = docs
-          .filter(d => d.createdAt?.toDate().toISOString().split('T')[0] === dateStr)
-          .reduce((acc, d) => acc + (d.durationSeconds || 0), 0);
+          .filter(d => {
+            const docDate = d.date instanceof Date ? d.date.toISOString().split('T')[0] : dateStr;
+            return docDate === dateStr;
+          })
+          .reduce((acc, d: any) => acc + (d.durationSeconds || 0), 0);
 
         return {
           day: dateStr.split('-')[2], // Just the day number
