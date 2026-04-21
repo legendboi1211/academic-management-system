@@ -1,54 +1,25 @@
-'use client';
+// src/lib/firebase.ts
+import { initializeApp, getApps, getApp } from "firebase/app";
+import { getFirestore } from "firebase/firestore";
+import { getAnalytics } from "firebase/analytics";
 
-import { app } from './firebase';
-
-// Lazy load all Firestore functions
-export const getFirestore = async () => {
-  const { getFirestore: _getFirestore } = await import('firebase/firestore');
-  return _getFirestore(app);
+const firebaseConfig = {
+  apiKey: "AIzaSyCuXAD_GfstTthc-pDEkG6B_sjNiTsj728",
+  authDomain: "timer-89c3e.firebaseapp.com",
+  databaseURL: "https://timer-89c3e-default-rtdb.firebaseio.com",
+  projectId: "timer-89c3e",
+  storageBucket: "timer-89c3e.firebasestorage.app",
+  messagingSenderId: "637035686923",
+  appId: "1:637035686923:web:f11c6ab6eb82ade20a2b0e",
+  measurementId: "G-G4WJV4W3XW"
 };
 
-export const collection = async (db: any, ...args: any[]) => {
-  const { collection: _collection } = await import('firebase/firestore');
-  return _collection(db, ...args);
-};
+// Initialize Firebase 
+// The 'export' here is critical to fix your Vercel build error
+export const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
-export const query = async (reference: any, ...args: any[]) => {
-  const { query: _query } = await import('firebase/firestore');
-  return _query(reference, ...args);
-};
+// Initialize Firestore and export it for use in your dashboard
+export const db = getFirestore(app);
 
-export const onSnapshot = async (q: any, callback: any) => {
-  const { onSnapshot: _onSnapshot } = await import('firebase/firestore');
-  return _onSnapshot(q, callback);
-};
-
-export const addDoc = async (collectionRef: any, data: any) => {
-  const { addDoc: _addDoc } = await import('firebase/firestore');
-  return _addDoc(collectionRef, data);
-};
-
-export const updateDoc = async (reference: any, data: any) => {
-  const { updateDoc: _updateDoc } = await import('firebase/firestore');
-  return _updateDoc(reference, data);
-};
-
-export const deleteDoc = async (reference: any) => {
-  const { deleteDoc: _deleteDoc } = await import('firebase/firestore');
-  return _deleteDoc(reference);
-};
-
-export const doc = async (db: any, ...args: any[]) => {
-  const { doc: _doc } = await import('firebase/firestore');
-  return _doc(db, ...args);
-};
-
-export const serverTimestamp = async () => {
-  const { serverTimestamp: _serverTimestamp } = await import('firebase/firestore');
-  return _serverTimestamp();
-};
-
-export const orderBy = async (...args: any[]) => {
-  const { orderBy: _orderBy } = await import('firebase/firestore');
-  return _orderBy(...args);
-};
+// Initialize Analytics (Check for window to avoid SSR errors in Next.js)
+export const analytics = typeof window !== "undefined" ? getAnalytics(app) : null;
