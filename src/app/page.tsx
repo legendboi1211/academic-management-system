@@ -14,7 +14,6 @@ export default function Dashboard() {
   const [newGoal, setNewGoal] = useState("");
   const [selectedSubject, setSelectedSubject] = useState("Physics");
   const [streak, setStreak] = useState(0);
-  const [graphData, setGraphData] = useState<{ day: string; hours: number }[]>([]);
   const [mounted, setMounted] = useState(false);
 
   const subjects = ["Physics", "PChemistry", "OChemistry", "IOChemistry", "Botany", "Zoology"];
@@ -24,7 +23,6 @@ export default function Dashboard() {
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
 
-    // 1. Sync Goals & Calculate Streak
     const qGoals = query(collection(db, "goals"), orderBy("createdAt", "desc"));
     const unsubGoals = onSnapshot(qGoals, (snapshot) => {
       const fetchedGoals = snapshot.docs.map(d => ({
@@ -32,17 +30,13 @@ export default function Dashboard() {
         ...d.data(),
         date: (d.data() as any).createdAt?.toDate() || new Date()
       }));
-
-      const todayGoals = fetchedGoals.filter(g => g.date >= startOfToday);
-      setGoals(todayGoals);
+      setGoals(fetchedGoals.filter(g => g.date >= startOfToday));
       calculateRealStreak(fetchedGoals);
     });
 
-    // 2. Sync Study Time from Timer Sessions
     const qTimer = query(collection(db, "timerSessions"));
     const unsubTimer = onSnapshot(qTimer, (snapshot) => {
       const docs = snapshot.docs.map(d => ({ ...d.data(), date: (d.data() as any).createdAt?.toDate() || new Date() }));
-
       const todaySecs = docs
         .filter(d => d.date >= startOfToday)
         .reduce((acc, d: any) => acc + (d.durationSeconds || 0), 0);
@@ -50,28 +44,6 @@ export default function Dashboard() {
       const h = Math.floor(todaySecs / 3600);
       const m = Math.floor((todaySecs % 3600) / 60);
       setStudyTime(`${h}h ${m}m`);
-
-      const last30Days = [...Array(30)].map((_, i) => {
-        const d = new Date();
-        d.setDate(d.getDate() - (29 - i));
-        return d.toISOString().split('T')[0];
-      });
-
-      const chartData = last30Days.map(dateStr => {
-        const dayTotal = docs
-          .filter(d => {
-            if (!d.date || !(d.date instanceof Date)) return false;
-            const docDate = d.date.toISOString().split('T')[0];
-            return docDate === dateStr;
-          })
-          .reduce((acc, d: any) => acc + (d.durationSeconds || 0), 0);
-
-        return {
-          day: dateStr.split('-')[2],
-          hours: dayTotal / 3600
-        };
-      });
-      setGraphData(chartData);
     });
 
     return () => { unsubGoals(); unsubTimer(); };
@@ -85,7 +57,6 @@ export default function Dashboard() {
       if (!goalsByDay[dayKey]) goalsByDay[dayKey] = [];
       goalsByDay[dayKey].push(g);
     });
-
     let count = 0;
     const today = new Date();
     for (let i = 0; i < 365; i++) {
@@ -121,9 +92,10 @@ export default function Dashboard() {
 
   if (!mounted) return null;
 
-  // Dynamic Date Calculation
+  // --- Dynamic Date Helpers ---
   const today = new Date();
   const currentDay = today.getDate();
+  const currentMonthName = today.toLocaleDateString('en-US', { month: 'long' });
   const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
 
   return (
@@ -148,12 +120,11 @@ export default function Dashboard() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Dynamic Calendar Widget - Fixed highlight issue */}
+          {/* FIXED: Dynamic Calendar Widget */}
           <div className="lg:col-span-4">
             <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
                <h3 className="font-bold text-slate-800 flex items-center gap-2 mb-6">
-                 <Calendar size={18} className="text-blue-500" /> 
-                 {today.toLocaleDateString('en-US', { month: 'long' })}
+                 <Calendar size={18} className="text-blue-500" /> {currentMonthName}
                </h3>
                <div className="grid grid-cols-7 gap-1.5 text-center">
                 {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(d => (
@@ -161,12 +132,12 @@ export default function Dashboard() {
                 ))}
                 {[...Array(daysInMonth)].map((_, i) => {
                   const dayNum = i + 1;
-                  const isToday = dayNum === currentDay; // Matches current system date
+                  const isToday = dayNum === currentDay; // Matches system date
                   return (
                     <div 
                       key={i} 
                       className={`aspect-square flex items-center justify-center rounded-lg text-xs font-bold transition-all 
-                      ${isToday ? 'bg-blue-600 text-white shadow-md scale-105' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'}`}
+                      ${isToday ? 'bg-blue-600 text-white shadow-md scale-105' : 'bg-slate-50 text-slate-400'}`}
                     >
                       {dayNum}
                     </div>
@@ -200,28 +171,24 @@ export default function Dashboard() {
               </div>
 
               <div className="space-y-4">
-                {goals.length === 0 ? (
-                  <div className="text-center py-10 text-slate-300 italic font-medium">No goals added for today.</div>
-                ) : (
-                  goals.map(goal => (
-                    <div key={goal.id} className="group flex items-center justify-between bg-slate-50 p-5 rounded-3xl border border-slate-100 hover:border-blue-200 hover:bg-white transition-all shadow-sm">
-                      <div className="flex items-center gap-4 flex-1">
-                        <button onClick={() => toggleGoal(goal.id, goal.completed)}>
-                          {goal.completed ? <CheckCircle2 className="text-emerald-500 w-6 h-6" /> : <Circle className="text-slate-300 w-6 h-6 hover:text-blue-500" />}
-                        </button>
-                        <div className="flex-1">
-                          <p className="text-[11px] font-black text-blue-600 uppercase tracking-wide mb-1">{goal.subject}</p>
-                          <span className={`font-bold text-lg transition-all ${goal.completed ? 'line-through text-slate-400' : 'text-slate-800'}`}>
-                            {goal.text}
-                          </span>
-                        </div>
-                      </div>
-                      <button onClick={() => deleteGoal(goal.id)} className="opacity-0 group-hover:opacity-100 text-slate-300 hover:text-red-500 p-2">
-                        <Trash2 size={18} />
+                {goals.map(goal => (
+                  <div key={goal.id} className="group flex items-center justify-between bg-slate-50 p-5 rounded-3xl border border-slate-100 hover:border-blue-200 hover:bg-white transition-all shadow-sm">
+                    <div className="flex items-center gap-4 flex-1">
+                      <button onClick={() => toggleGoal(goal.id, goal.completed)}>
+                        {goal.completed ? <CheckCircle2 className="text-emerald-500 w-6 h-6" /> : <Circle className="text-slate-300 w-6 h-6" />}
                       </button>
+                      <div className="flex-1">
+                        <p className="text-[11px] font-black text-blue-600 uppercase tracking-wide mb-1">{goal.subject}</p>
+                        <span className={`font-bold text-lg ${goal.completed ? 'line-through text-slate-400' : 'text-slate-800'}`}>
+                          {goal.text}
+                        </span>
+                      </div>
                     </div>
-                  ))
-                )}
+                    <button onClick={() => deleteGoal(goal.id)} className="opacity-0 group-hover:opacity-100 text-slate-300 hover:text-red-500 transition-all p-2">
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
