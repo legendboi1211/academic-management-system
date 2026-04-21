@@ -1,6 +1,6 @@
-import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
-import { getAnalytics } from "firebase/analytics";
+'use client';
+
+import { initializeApp } from 'firebase/app';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -15,8 +15,10 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+export const app = initializeApp(firebaseConfig);
 
-// Export the database so your Timer page can use it
-export const db = getFirestore(app);
+// Lazy load Firestore only when needed
+export const getDb = async () => {
+  const { getFirestore } = await import('firebase/firestore');
+  return getFirestore(app);
+};
