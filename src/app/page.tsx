@@ -42,7 +42,7 @@ export default function Dashboard() {
     // 2. Sync Study Time from Timer Sessions
     const qTimer = query(collection(db, "timerSessions"));
     const unsubTimer = onSnapshot(qTimer, (snapshot) => {
-      const docs = snapshot.docs.map(d => ({ ...d.data(), date: (d.data() as any).createdAt?.toDate() }));
+      const docs = snapshot.docs.map(d => ({ ...d.data(), date: (d.data() as any).createdAt?.toDate() || new Date() }));
 
       // Calculate total time today
       const todaySecs = docs
@@ -63,7 +63,8 @@ export default function Dashboard() {
       const chartData = last30Days.map(dateStr => {
         const dayTotal = docs
           .filter(d => {
-            const docDate = d.date instanceof Date ? d.date.toISOString().split('T')[0] : dateStr;
+            if (!d.date || !(d.date instanceof Date)) return false;
+            const docDate = d.date.toISOString().split('T')[0];
             return docDate === dateStr;
           })
           .reduce((acc, d: any) => acc + (d.durationSeconds || 0), 0);
