@@ -121,6 +121,7 @@ export default function Dashboard() {
 
   if (!mounted) return null;
 
+  // Dynamic Date Calculation
   const today = new Date();
   const currentDay = today.getDate();
   const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
@@ -147,7 +148,7 @@ export default function Dashboard() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Dynamic Calendar Widget */}
+          {/* Dynamic Calendar Widget - Fixed highlight issue */}
           <div className="lg:col-span-4">
             <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
                <h3 className="font-bold text-slate-800 flex items-center gap-2 mb-6">
@@ -159,11 +160,15 @@ export default function Dashboard() {
                   <div key={d} className="text-[10px] font-black text-slate-300 mb-2">{d}</div>
                 ))}
                 {[...Array(daysInMonth)].map((_, i) => {
-                  const day = i + 1;
-                  const isToday = day === currentDay;
+                  const dayNum = i + 1;
+                  const isToday = dayNum === currentDay; // Matches current system date
                   return (
-                    <div key={i} className={`aspect-square flex items-center justify-center rounded-lg text-xs font-bold transition-all ${isToday ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-50 text-slate-400'}`}>
-                      {day}
+                    <div 
+                      key={i} 
+                      className={`aspect-square flex items-center justify-center rounded-lg text-xs font-bold transition-all 
+                      ${isToday ? 'bg-blue-600 text-white shadow-md scale-105' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'}`}
+                    >
+                      {dayNum}
                     </div>
                   );
                 })}
