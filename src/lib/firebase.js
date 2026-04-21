@@ -1,18 +1,22 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
+import { getAnalytics } from "firebase/analytics";
 
-// These values come from your Firebase Project Settings
+// Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY_HERE",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyCuXAD_GfstTthc-pDEkG6B_sjNiTsj728",
+  authDomain: "timer-89c3e.firebaseapp.com",
+  databaseURL: "https://timer-89c3e-default-rtdb.firebaseio.com",
+  projectId: "timer-89c3e",
+  storageBucket: "timer-89c3e.firebasestorage.app",
+  messagingSenderId: "637035686923",
+  appId: "1:637035686923:web:f11c6ab6eb82ade20a2b0e",
+  measurementId: "G-G4WJV4W3XW"
 };
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
 
 // Export the database so your Timer page can use it
 export const db = getFirestore(app);
