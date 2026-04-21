@@ -1,6 +1,7 @@
 'use client';
 
 import { initializeApp } from 'firebase/app';
+import { getFirestore } from 'firebase/firestore';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -15,10 +16,7 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-export const app = initializeApp(firebaseConfig);
+const app = initializeApp(firebaseConfig);
 
-// Lazy load Firestore only when needed
-export const getDb = async () => {
-  const { getFirestore } = await import('firebase/firestore');
-  return getFirestore(app);
-};
+// Export db for use in components
+export const db = getFirestore(app);
