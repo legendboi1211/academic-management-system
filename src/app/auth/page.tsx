@@ -11,7 +11,7 @@ export default function AuthPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login, signup } = useAuth();
+  const { login, signup, error: authError } = useAuth();
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -26,21 +26,28 @@ export default function AuthPage() {
           setLoading(false);
           return;
         }
+        console.log('Starting signup...');
         await signup(email, password);
+        console.log('Signup completed, redirecting...');
       } else {
+        console.log('Starting login...');
         await login(email, password);
+        console.log('Login completed, redirecting...');
       }
       router.push('/');
     } catch (err: any) {
-      const errorMsg = err.message || 'Authentication failed';
-      if (errorMsg.includes('email-already-in-use')) {
+      console.error('Auth error:', err);
+      const errorMsg = err.message || err.code || 'Authentication failed';
+      if (errorMsg.includes('email-already-in-use') || errorMsg.includes('EMAIL_EXISTS')) {
         setError('Email already in use');
-      } else if (errorMsg.includes('invalid-email')) {
+      } else if (errorMsg.includes('invalid-email') || errorMsg.includes('INVALID_EMAIL')) {
         setError('Invalid email address');
-      } else if (errorMsg.includes('wrong-password')) {
+      } else if (errorMsg.includes('wrong-password') || errorMsg.includes('INVALID_PASSWORD')) {
         setError('Wrong password');
-      } else if (errorMsg.includes('user-not-found')) {
+      } else if (errorMsg.includes('user-not-found') || errorMsg.includes('USER_NOT_FOUND')) {
         setError('User not found');
+      } else if (errorMsg.includes('auth/')) {
+        setError(errorMsg);
       } else {
         setError(errorMsg);
       }
@@ -77,10 +84,10 @@ export default function AuthPage() {
           </p>
 
           {/* Error Message */}
-          {error && (
+          {(error || authError) && (
             <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-6 flex items-start gap-3">
               <AlertCircle className="text-red-400 flex-shrink-0 mt-0.5" size={18} />
-              <p className="text-red-200 text-sm">{error}</p>
+              <p className="text-red-200 text-sm">{error || authError}</p>
             </div>
           )}
 
