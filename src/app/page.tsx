@@ -3,13 +3,16 @@
 import { useState, useEffect } from 'react';
 import { Timer, Target, TrendingUp, Calendar, Plus, CheckCircle2, Circle, Trash2, Beaker, BookOpen, BarChart, RotateCcw } from 'lucide-react';
 import { db } from '@/lib/firebase';
-import { collection, query, onSnapshot, addDoc, updateDoc, doc, deleteDoc, serverTimestamp, orderBy } from 'firebase/firestore';
+import { collection, query, onSnapshot, addDoc, updateDoc, doc, deleteDoc, serverTimestamp, orderBy, where } from 'firebase/firestore';
 import { useTimer } from '@/components/TimerContext';
-import { resetAllData } from '@/lib/resetData';
+import { useAuth } from '@/components/AuthContext';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
+import { resetUserData } from '@/lib/resetData';
 import Link from 'next/link';
 
-export default function Dashboard() {
+function DashboardContent() {
   const { seconds } = useTimer();
+  const { user } = useAuth();
   const [studyTime, setStudyTime] = useState("0h 0m");
   const [goals, setGoals] = useState<any[]>([]);
   const [newGoal, setNewGoal] = useState("");
@@ -20,11 +23,17 @@ export default function Dashboard() {
   const subjects = ["Physics", "PChemistry", "OChemistry", "IOChemistry", "Botany", "Zoology"];
 
   useEffect(() => {
+    if (!user) return;
+    
     setMounted(true);
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
 
-    const qGoals = query(collection(db, "goals"), orderBy("createdAt", "desc"));
+    // User-specific goals collection
+    const qGoals = query(
+      collection(db, "users", user.uid, "goals"),
+      orderBy("createdAt", "desc")
+    );
     const unsubGoals = onSnapshot(qGoals, (snapshot) => {
       const fetchedGoals = snapshot.docs.map(d => ({
         id: d.id,
@@ -35,7 +44,10 @@ export default function Dashboard() {
       calculateRealStreak(fetchedGoals);
     });
 
-    const qTimer = query(collection(db, "timerSessions"));
+    // User-specific timer sessions collection
+    const qTimer = query(
+      collection(db, "users", user.uid, "timerSessions")
+    );
     const unsubTimer = onSnapshot(qTimer, (snapshot) => {
       const docs = snapshot.docs.map(d => ({ ...d.data(), date: (d.data() as any).createdAt?.toDate() || new Date() }));
       const todaySecs = docs
@@ -48,7 +60,7 @@ export default function Dashboard() {
     });
 
     return () => { unsubGoals(); unsubTimer(); };
-  }, []);
+  }, [user]);
 
   const calculateRealStreak = (allGoals: any[]) => {
     if (allGoals.length === 0) { setStreak(0); return; }
@@ -73,8 +85,8 @@ export default function Dashboard() {
   };
 
   const addGoal = async () => {
-    if (!newGoal.trim()) return;
-    await addDoc(collection(db, "goals"), { 
+    if (!newGoal.trim() || !user) return;
+    await addDoc(collection(db, "users", user.uid, "goals"), { 
       text: newGoal, 
       subject: selectedSubject,
       completed: false, 
@@ -84,16 +96,18 @@ export default function Dashboard() {
   };
 
   const toggleGoal = async (id: string, currentState: boolean) => {
-    await updateDoc(doc(db, "goals", id), { completed: !currentState });
+    if (!user) return;
+    await updateDoc(doc(db, "users", user.uid, "goals", id), { completed: !currentState });
   };
 
   const deleteGoal = async (id: string) => {
-    await deleteDoc(doc(db, "goals", id));
+    if (!user) return;
+    await deleteDoc(doc(db, "users", user.uid, "goals", id));
   };
 
   const handleResetData = async () => {
     if (window.confirm('Are you sure you want to reset ALL data to 0? This action cannot be undone.')) {
-      const result = await resetAllData();
+      const result = await resetUserData(user?.uid || "");
       if (result.success) {
         alert('All data has been reset!');
         window.location.reload();
@@ -153,7 +167,7 @@ export default function Dashboard() {
                 ))}
                 {[...Array(daysInMonth)].map((_, i) => {
                   const dayNum = i + 1;
-                  const isToday = dayNum === currentDay; // Matches system date
+                  const isToday = dayNum === currentDay;
                   return (
                     <div 
                       key={i} 
@@ -216,6 +230,14 @@ export default function Dashboard() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function Dashboard() {
+  return (
+    <ProtectedRoute>
+      <DashboardContent />
+    </ProtectedRoute>
   );
 }
 

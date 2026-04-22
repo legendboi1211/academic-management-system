@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Plus, Trash2, BookOpen } from 'lucide-react';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
 
 interface Note {
   id: string;
@@ -10,7 +11,7 @@ interface Note {
   createdAt: string;
 }
 
-export default function NotesPage() {
+function NotesPageContent() {
   const [mounted, setMounted] = useState(false);
   const [notes, setNotes] = useState<Note[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -173,5 +174,13 @@ export default function NotesPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function NotesPage() {
+  return (
+    <ProtectedRoute>
+      <NotesPageContent />
+    </ProtectedRoute>
   );
 }

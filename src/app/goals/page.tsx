@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Plus, Target, CheckCircle, Clock, AlertCircle, Trash2, Calendar, ChevronRight, X } from 'lucide-react';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
 
 interface Goal {
   id: string;
@@ -13,7 +14,7 @@ interface Goal {
   category: string;
 }
 
-export default function GoalsPage() {
+function GoalsPageContent() {
   const [mounted, setMounted] = useState(false);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -264,5 +265,13 @@ export default function GoalsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function GoalsPage() {
+  return (
+    <ProtectedRoute>
+      <GoalsPageContent />
+    </ProtectedRoute>
   );
 }

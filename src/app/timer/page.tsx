@@ -3,16 +3,19 @@
 import { db } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { useTimer } from '@/components/TimerContext';
+import { useAuth } from '@/components/AuthContext';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { Play, Pause, Check, RotateCcw, X } from 'lucide-react';
 import Link from 'next/link';
 
-export default function TimerPage() {
+function TimerPageContent() {
   const { seconds, isActive, setIsActive, resetTimer } = useTimer();
+  const { user } = useAuth();
 
   const handleFinish = async () => {
-    if (seconds > 0) {
+    if (seconds > 0 && user) {
       try {
-        await addDoc(collection(db, "timerSessions"), {
+        await addDoc(collection(db, "users", user.uid, "timerSessions"), {
           durationSeconds: seconds,
           createdAt: serverTimestamp(),
           label: 'Organic Chemistry Session'
@@ -74,5 +77,13 @@ export default function TimerPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function TimerPage() {
+  return (
+    <ProtectedRoute>
+      <TimerPageContent />
+    </ProtectedRoute>
   );
 }
