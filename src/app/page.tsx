@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Timer, Target, TrendingUp, Calendar, Plus, CheckCircle2, Circle, Trash2, Beaker, BookOpen, BarChart } from 'lucide-react';
+import { Timer, Target, TrendingUp, Calendar, Plus, CheckCircle2, Circle, Trash2, Beaker, BookOpen, BarChart, RotateCcw } from 'lucide-react';
 import { db } from '@/lib/firebase';
 import { collection, query, onSnapshot, addDoc, updateDoc, doc, deleteDoc, serverTimestamp, orderBy } from 'firebase/firestore';
 import { useTimer } from '@/components/TimerContext';
+import { resetAllData } from '@/lib/resetData';
 import Link from 'next/link';
 
 export default function Dashboard() {
@@ -90,6 +91,18 @@ export default function Dashboard() {
     await deleteDoc(doc(db, "goals", id));
   };
 
+  const handleResetData = async () => {
+    if (window.confirm('Are you sure you want to reset ALL data to 0? This action cannot be undone.')) {
+      const result = await resetAllData();
+      if (result.success) {
+        alert('All data has been reset!');
+        window.location.reload();
+      } else {
+        alert('Error resetting data: ' + result.message);
+      }
+    }
+  };
+
   if (!mounted) return null;
 
   // --- Dynamic Date Helpers ---
@@ -106,9 +119,17 @@ export default function Dashboard() {
             <div className="bg-blue-600 p-2 rounded-xl"><Beaker className="text-white h-5 w-5" /></div>
             <h1 className="text-xl font-black">STUDY<span className="text-blue-600">.ORG</span></h1>
           </div>
-          <Link href="/timer" className="bg-[#0F172A] text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-sm hover:bg-slate-800 transition-all">
-            Start Focus Mode
-          </Link>
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={handleResetData}
+              className="flex items-center gap-2 bg-red-50 text-red-600 px-4 py-2.5 rounded-xl font-bold text-sm hover:bg-red-100 transition-all border border-red-200"
+            >
+              <RotateCcw size={16} /> Reset
+            </button>
+            <Link href="/timer" className="bg-[#0F172A] text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-sm hover:bg-slate-800 transition-all">
+              Start Focus Mode
+            </Link>
+          </div>
         </div>
       </nav>
 
